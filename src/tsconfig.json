@@ -1,0 +1,33 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"lib": [
+			"es5",
+			"es6",
+			"es7",
+			"esnext"
+		],
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"noImplicitAny": true,
+		"removeComments": false,
+		"preserveConstEnums": true,
+		"target": "esnext",
+		"declaration": false,
+		"sourceMap": true,
+		"experimentalDecorators": true,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"noImplicitThis": true,
+		"noEmitOnError": true,
+		"noEmit": false,
+		"baseUrl": ".",
+		"outDir": "../dist",
+		"alwaysStrict": true,
+		"typeRoots": [
+			"../node_modules/@types"
+		],
+		"types": [
+		]
+	}
+}
