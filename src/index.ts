@@ -65,7 +65,7 @@ console.log('hello world');
 `);
 
 // idea
-fs.placeFile(`.idea/${basename(CONTENT_ROOT)}.iml`, readTemplate('rollup.config.js'));
+fs.placeFile(`.idea/${basename(CONTENT_ROOT)}.iml`, readTemplate('idea/idea.iml'));
 fs.linkFile('.idea/codeStyles', locateTemplate('idea/codeStyles'));
 fs.placeFile('.idea/misc.xml', readTemplate('idea/misc.xml'));
 fs.placeFile('.idea/vcs.xml', readTemplate('idea/vcs.xml'));
