@@ -17,7 +17,7 @@ const myJson = {
 	scripts: {
 		watch: 'adaptor rollup -w -c build/rollup.config.js',
 		build: 'rollup -c build/rollup.config.js',
-		lint : 'tslint -c build/tslint.json \'src\'',
+		lint : 'tslint -c build/tslint.json \'src/**/*.ts\'',
 	},
 	main   : './dist/index.js',
 	module : './dist/index.module.js',
@@ -39,12 +39,6 @@ const installed = [
 ];
 const prodDeps = prodPackages.filter((item) => !installed.includes(item));
 const devDeps = devPackages.filter((item) => !installed.includes(item));
-if (prodDeps.length) {
-	fs.exec(`yarn add ` + prodDeps.join(' '));
-}
-if (devDeps.length) {
-	fs.exec(`yarn add --dev ` + devDeps.join(' '));
-}
 
 // extra config
 fs.linkFile('build/tslint.json', locateTemplate('tslint.json'));
@@ -69,12 +63,20 @@ fs.placeFile(`.idea/${basename(CONTENT_ROOT)}.iml`, readTemplate('idea/idea.iml'
 fs.linkFile('.idea/codeStyles', locateTemplate('idea/codeStyles'));
 fs.placeFile('.idea/misc.xml', readTemplate('idea/misc.xml'));
 fs.placeFile('.idea/vcs.xml', readTemplate('idea/vcs.xml'));
+fs.placeFile('.idea/modules.xml', readTemplate('idea/modules.xml').replace(/{NAME}/g, basename(CONTENT_ROOT)));
 
 // create git repo
 if (!fs.exists('.git')) {
 	fs.exec('git init');
 	fs.exec(`git remote add origin git@github.com:${gitUsername}/${projectBase}.git`);
 	fs.exec('git add .');
+}
+
+if (prodDeps.length) {
+	fs.exec(`yarn add ` + prodDeps.join(' '));
+}
+if (devDeps.length) {
+	fs.exec(`yarn add --dev ` + devDeps.join(' '));
 }
 
 function readTemplate(what: string) {
