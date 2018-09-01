@@ -40,22 +40,18 @@ const commonOutput = {
 	name: pkg.name.replace(/^@/, '').replace(/\//g, '__'),
 };
 
+const input = existsSync(resolve('src/_index.ts'))? resolve('src/_index.ts') : resolve('src/index.ts');
+
 const config = [
 	{
-		input: resolve('src/index.ts'),
-		plugins,
-		external,
-		watch,
+		input, plugins, external, watch,
 		output: [
 			{file: mainFile, format: 'cjs', ...commonOutput},
 			{file: moduleFile, format: 'esm', ...commonOutput},
 		],
 	},
 	{
-		input: resolve('src/index.ts'),
-		plugins,
-		external,
-		watch,
+		input, plugins, external, watch,
 		output: {file: resolve(mainOutPath, 'bundle.js'), format: 'umd', ...commonOutput},
 	},
 ];

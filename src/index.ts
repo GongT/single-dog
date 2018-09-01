@@ -13,14 +13,17 @@ declare const TEMPLATE_ROOT: string;
 const fs = new Filesystem(CONTENT_ROOT);
 
 const myJson = {
-	name   : fs.getProjectName(),
-	scripts: {
+	name        : fs.getProjectName(),
+	scripts     : {
 		watch: 'adaptor rollup -w -c build/rollup.config.js',
 		build: 'rollup -c build/rollup.config.js',
 		lint : 'tslint -c build/tslint.json \'src/**/*.ts\'',
 	},
-	main   : './dist/index.js',
-	module : './dist/index.module.js',
+	main        : './dist/index.js',
+	module      : './dist/index.module.js',
+	dependencies: {
+		'source-map-support': '*',
+	},
 };
 const projectBase = basename(myJson.name);
 

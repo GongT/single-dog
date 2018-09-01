@@ -1,7 +1,4 @@
-export const prodPackages = [
-	'source-map-support',
-	'tsconfig-paths',
-];
+export const prodPackages: string[] = [];
 export const devPackages = [
 	'@types/node',
 	'@gongt/single-dog',
@@ -11,6 +8,4 @@ export const devPackages = [
 	'rollup-plugin-node-resolve',
 	'rollup-plugin-typescript2',
 	'typescript',
-	'tslint',
-	'tslint-microsoft-contrib',
 ];
