@@ -13,35 +13,40 @@ declare const TEMPLATE_ROOT: string;
 const fs = new Filesystem(CONTENT_ROOT);
 
 const myJson = {
-	name        : fs.getProjectName(),
-	scripts     : {
+	name           : fs.getProjectName(),
+	scripts        : {
 		watch: 'adaptor rollup -w -c build/rollup.config.js',
 		build: 'rollup -c build/rollup.config.js',
 		lint : 'tslint -c build/tslint.json \'src/**/*.ts\'',
 	},
-	main        : './dist/index.js',
-	module      : './dist/index.module.js',
-	dependencies: {
+	main           : './dist/index.js',
+	module         : './dist/index.module.js',
+	dependencies   : {
 		'source-map-support': '*',
-	},
+	} as any,
+	devDependencies: {} as any,
 };
+
+if (!myJson.name) {
+	console.error('please add name to your package.json');
+	process.exit(1);
+}
 const projectBase = basename(myJson.name);
 
 // base config
 fs.mergeIgnore('.gitignore', readTemplate('.gitignore'));
 fs.overwrite('.editorconfig', readTemplate('.editorconfig'));
 fs.placeFile('LICENSE', license());
-fs.rmergeJson('package.json', myJson);
 fs.placeFile('README.md', `# ${projectBase}`);
 
-// yarn add
-const resultPkg = JSON.parse(fs.readExists('package.json'));
-const installed = [
-	...Object.keys(resultPkg.dependencies || {}),
-	...Object.keys(resultPkg.devDependencies || {}),
-];
-const prodDeps = prodPackages.filter((item) => !installed.includes(item));
-const devDeps = devPackages.filter((item) => !installed.includes(item));
+// package
+prodPackages.forEach((item) => {
+	myJson.dependencies[item] = 'latest';
+});
+devPackages.forEach((item) => {
+	myJson.devDependencies[item] = 'latest';
+});
+fs.rmergeJson('package.json', myJson);
 
 // extra config
 fs.linkFile('build/tslint.json', locateTemplate('tslint.json'));
@@ -73,13 +78,6 @@ if (!fs.exists('.git')) {
 	fs.exec('git init');
 	fs.exec(`git remote add origin git@github.com:${gitUsername}/${projectBase}.git`);
 	fs.exec('git add .');
-}
-
-if (prodDeps.length) {
-	fs.exec(`yarn add ` + prodDeps.join(' '));
-}
-if (devDeps.length) {
-	fs.exec(`yarn add --dev ` + devDeps.join(' '));
 }
 
 function readTemplate(what: string) {

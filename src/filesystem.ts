@@ -1,8 +1,9 @@
 import { basename, resolve } from 'path';
-import { ensureDirSync, ensureSymlinkSync, existsSync, readFileSync, writeFileSync } from 'fs-extra';
+import { ensureDirSync, existsSync, readFileSync, removeSync, writeFileSync } from 'fs-extra';
 import * as deepmerge from 'deepmerge';
 import { execSync, ExecSyncOptionsWithStringEncoding } from 'child_process';
 import { gitUsername } from './gitName';
+import { lstatSync, readlinkSync, symlinkSync } from 'fs';
 
 declare const CONTENT_ROOT: string;
 
@@ -73,7 +74,14 @@ export class Filesystem {
 		partsTarget.unshift(...new Array(upFolders).fill('..'));
 
 		console.log('linkFile(%s, %s)', abs, partsTarget.join('/'));
-		ensureSymlinkSync(partsTarget.join('/'), abs);
+		const t = partsTarget.join('/');
+		if (existsSync(abs)) {
+			if (lstatSync(abs).isSymbolicLink() && readlinkSync(abs) === t) {
+				return;
+			}
+		}
+		removeSync(abs);
+		symlinkSync(t, abs);
 	}
 
 	placeFile(file: string, content: string) {
