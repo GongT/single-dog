@@ -2,7 +2,7 @@
 import 'source-map-support/register';
 
 import { Filesystem } from './filesystem';
-import { basename, resolve } from 'path';
+import { basename, posix, resolve } from 'path';
 import { readFileSync } from 'fs-extra';
 import { gitName, gitUsername } from './gitName';
 import { devPackages, prodPackages } from './constants';
@@ -55,7 +55,7 @@ fs.placeFile('build/loader.js', readTemplate('loader.js'));
 
 // typescript
 fs.mergeJson('src/tsconfig.json', {
-	extends        : locateTemplate('tsconfig.json'),
+	extends        : locateTemplateRelativeTo('tsconfig.json', resolve(CONTENT_ROOT, 'src')),
 	compilerOptions: {
 		baseUrl: '.',
 		outDir : '../dist',
@@ -86,6 +86,10 @@ function readTemplate(what: string) {
 
 function locateTemplate(file: string) {
 	return resolve(CONTENT_ROOT, 'node_modules/@gongt/single-dog/package', file);
+}
+
+function locateTemplateRelativeTo(file: string, folder: string) {
+	return posix.relative(folder, locateTemplate(file));
 }
 
 function license() {
