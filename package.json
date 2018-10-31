@@ -1,6 +1,6 @@
 {
 	"name": "@gongt/single-dog",
-	"version": "1.1.111111",
+	"version": "1.1.1111111",
 	"bin": {
 		"im-single-dog": "./index.js"
 	},
