@@ -89,7 +89,7 @@ function locateTemplate(file: string) {
 }
 
 function locateTemplateRelativeTo(file: string, folder: string) {
-	return posix.relative(folder, locateTemplate(file));
+	return posix.relative(posix.normalize(folder), locateTemplate(file));
 }
 
 function license() {
