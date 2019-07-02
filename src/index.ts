@@ -1,11 +1,13 @@
 ///<reference types="node"/>
-import 'source-map-support/register';
-
-import { Filesystem } from './filesystem';
-import { basename, posix, resolve } from 'path';
+import * as deepmerge from 'deepmerge';
 import { readFileSync } from 'fs-extra';
-import { gitName, gitUsername } from './gitName';
+import { basename, posix, resolve } from 'path';
+import 'source-map-support/register';
 import { devPackages, prodPackages } from './constants';
+import { Filesystem, uniqueArray } from './filesystem';
+import { gitName, gitUsername } from './gitName';
+
+const { manifest } = require('pacote');
 
 declare const CONTENT_ROOT: string;
 declare const TEMPLATE_ROOT: string;
@@ -13,17 +15,15 @@ declare const TEMPLATE_ROOT: string;
 const fs = new Filesystem(CONTENT_ROOT);
 
 const myJson = {
-	name           : fs.getProjectName(),
-	scripts        : {
-		watch: 'adaptor rollup -w -c build/rollup.config.js',
-		build: 'rollup -c build/rollup.config.js',
-		lint : 'tslint -c build/tslint.json \'src/**/*.ts\'',
+	name: fs.getProjectName(),
+	scripts: {
+		watch: 'tsc -w -p src',
+		build: 'tsc -p src',
+		upgrade: 'ncu --upgrade --packageFile ./package.json',
 	},
-	main           : './dist/index.js',
-	module         : './dist/index.module.js',
-	dependencies   : {
-		'source-map-support': '*',
-	} as any,
+	main: './lib/index.js',
+	module: './lib/index.module.js',
+	dependencies: {} as any,
 	devDependencies: {} as any,
 };
 
@@ -33,52 +33,63 @@ if (!myJson.name) {
 }
 const projectBase = basename(myJson.name);
 
-// base config
-fs.mergeIgnore('.gitignore', readTemplate('.gitignore'));
-fs.overwrite('.editorconfig', readTemplate('.editorconfig'));
-fs.placeFile('LICENSE', license());
-fs.placeFile('README.md', `# ${projectBase}`);
+(async () => {
+	// base config
+	fs.mergeIgnore('.gitignore', readTemplate('.gitignore'));
+	fs.overwrite('.editorconfig', readTemplate('.editorconfig'));
+	fs.placeFile('LICENSE', license());
+	fs.placeFile('README.md', `# ${projectBase}`);
 
-// package
-prodPackages.forEach((item) => {
-	myJson.dependencies[item] = 'latest';
+	async function resolveVersion(packageName: string) {
+		console.log('Resolving package: %s', packageName);
+		return '^' + (await manifest(packageName + '@latest')).version;
+	}
+
+	// package
+	const packageJson = await deepmerge(
+		myJson,
+		JSON.parse(fs.readExists('package.json') || '{}'),
+		{ arrayMerge: uniqueArray },
+	);
+	for (const item of prodPackages) {
+		if (!packageJson.dependencies[item]) {
+			packageJson.dependencies[item] = await resolveVersion(item);
+		}
+	}
+	for (const item of devPackages) {
+		if (!packageJson.devDependencies[item]) {
+			packageJson.devDependencies[item] = await resolveVersion(item);
+		}
+	}
+	fs.writeJson('package.json', packageJson);
+
+	// typescript
+	fs.mergeJson('src/tsconfig.json', {
+		extends: locateTemplateRelativeTo('tsconfig.json', resolve(CONTENT_ROOT, 'src')),
+		compilerOptions: {
+			baseUrl: '.',
+			outDir: '../lib',
+		},
+	});
+
+	// idea
+	fs.placeFile(`.idea/${basename(CONTENT_ROOT)}.iml`, readTemplate('idea/idea.iml'));
+	fs.linkFile('.idea/codeStyles', locateTemplate('idea/codeStyles'));
+	fs.placeFile('.idea/misc.xml', readTemplate('idea/misc.xml'));
+	fs.placeFile('.idea/vcs.xml', readTemplate('idea/vcs.xml'));
+	fs.placeFile('.idea/modules.xml', readTemplate('idea/modules.xml').replace(/{NAME}/g, basename(CONTENT_ROOT)));
+
+	// create git repo
+	if (!fs.exists('.git')) {
+		fs.exec('git init');
+		fs.exec(`git remote add origin git@github.com:${gitUsername}/${projectBase}.git`);
+		fs.exec('git add .');
+	}
+})().catch((e) => {
+	setImmediate(() => {
+		throw e;
+	});
 });
-devPackages.forEach((item) => {
-	myJson.devDependencies[item] = 'latest';
-});
-fs.rmergeJson('package.json', myJson);
-
-// extra config
-fs.linkFile('build/tslint.json', locateTemplate('tslint.json'));
-fs.placeFile('build/rollup.config.js', readTemplate('rollup.config.js'));
-fs.placeFile('build/loader.js', readTemplate('loader.js'));
-
-// typescript
-fs.mergeJson('src/tsconfig.json', {
-	extends        : locateTemplateRelativeTo('tsconfig.json', resolve(CONTENT_ROOT, 'src')),
-	compilerOptions: {
-		baseUrl: '.',
-		outDir : '../dist',
-	},
-});
-fs.placeFile('src/index.ts', `///<reference types="node"/>
-
-console.log('hello world');
-`);
-
-// idea
-fs.placeFile(`.idea/${basename(CONTENT_ROOT)}.iml`, readTemplate('idea/idea.iml'));
-fs.linkFile('.idea/codeStyles', locateTemplate('idea/codeStyles'));
-fs.placeFile('.idea/misc.xml', readTemplate('idea/misc.xml'));
-fs.placeFile('.idea/vcs.xml', readTemplate('idea/vcs.xml'));
-fs.placeFile('.idea/modules.xml', readTemplate('idea/modules.xml').replace(/{NAME}/g, basename(CONTENT_ROOT)));
-
-// create git repo
-if (!fs.exists('.git')) {
-	fs.exec('git init');
-	fs.exec(`git remote add origin git@github.com:${gitUsername}/${projectBase}.git`);
-	fs.exec('git add .');
-}
 
 function readTemplate(what: string) {
 	return readFileSync(resolve(TEMPLATE_ROOT, what), 'utf8');

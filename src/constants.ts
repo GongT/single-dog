@@ -1,11 +1,9 @@
-export const prodPackages: string[] = [];
+export const prodPackages: string[] = [
+	'source-map-support',
+];
 export const devPackages = [
 	'@types/node',
 	'@gongt/single-dog',
-	'chokidar',
-	'rollup',
-	'rollup-plugin-commonjs',
-	'rollup-plugin-node-resolve',
-	'rollup-plugin-typescript2',
+	'npm-check-updates',
 	'typescript',
 ];

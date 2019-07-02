@@ -1,13 +1,13 @@
-import { basename, resolve } from 'path';
-import { ensureDirSync, existsSync, readFileSync, removeSync, writeFileSync } from 'fs-extra';
-import * as deepmerge from 'deepmerge';
 import { execSync, ExecSyncOptionsWithStringEncoding } from 'child_process';
-import { gitUsername } from './gitName';
+import * as deepmerge from 'deepmerge';
 import { lstatSync, readlinkSync, symlinkSync } from 'fs';
+import { ensureDirSync, existsSync, readFileSync, removeSync, writeFileSync } from 'fs-extra';
+import { basename, resolve } from 'path';
+import { gitUsername } from './gitName';
 
 declare const CONTENT_ROOT: string;
 
-function uniqueArray(target: any[], source: any[]) {
+export function uniqueArray(target: any[], source: any[]) {
 	return target.concat(source).filter((value, index, self) => {
 		return self.indexOf(value) === index;
 	});
@@ -21,6 +21,10 @@ export class Filesystem {
 		ensureDirSync(resolve(abs, '..'));
 		console.log('writeFile(%s, FileContent<%s>)', abs, content.length);
 		writeFileSync(abs, content, 'utf8');
+	}
+
+	writeJson(file: string, value: any) {
+		this.overwrite(file, this.stringifyJSON(value));
 	}
 
 	mergeJson(file: string, value: any) {
@@ -120,8 +124,8 @@ export class Filesystem {
 	exec(command: string) {
 		console.error(command);
 		const opt: ExecSyncOptionsWithStringEncoding = {
-			encoding   : 'utf8',
-			cwd        : CONTENT_ROOT,
+			encoding: 'utf8',
+			cwd: CONTENT_ROOT,
 			windowsHide: true,
 		};
 		return execSync(command, opt).trim();
